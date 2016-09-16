@@ -1,0 +1,25 @@
+apply plugin: 'java'
+apply plugin: 'application'
+
+repositories{
+    maven { url "https://raw.githubusercontent.com/acmi/L2io/mvn-repo" }
+    maven { url "https://raw.githubusercontent.com/acmi/AutoCompleteComboBox/mvn-repo" }
+}
+
+dependencies{
+    compile group:'acmi.l2.clientmod', name:'l2io', version: '2.1.1'
+    compile group:'acmi.util', name:'autocomletecombobox', version: '1.1'
+    compile project(':jsquish')
+}
+
+mainClassName = "acmi.l2.clientmod.l2tool.L2Tool"
+
+jar {
+    manifest {
+        attributes "Main-Class": mainClassName
+    }
+
+    from {
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}

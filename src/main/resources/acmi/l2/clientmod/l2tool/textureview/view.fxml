@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+
+<StackPane id="StackPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity"
+           prefHeight="300.0" prefWidth="300.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/2.2"
+           fx:controller="acmi.l2.clientmod.l2tool.textureview.TextureView">
+    <StackPane fx:id="pane" prefHeight="150.0" prefWidth="200.0">
+        <ImageView fx:id="image" fitHeight="150.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true"/>
+    </StackPane>
+    <VBox maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="-1.0" prefWidth="-1.0" spacing="5.0"
+          StackPane.alignment="BOTTOM_LEFT">
+        <StackPane.margin>
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+        </StackPane.margin>
+        <CheckBox fx:id="alpha" text="Alpha"/>
+        <ComboBox fx:id="scale"/>
+        <ComboBox fx:id="background"/>
+    </VBox>
+</StackPane>

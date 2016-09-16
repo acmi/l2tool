@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.*?>
+<AnchorPane id="AnchorPane" prefWidth="350.0" xmlns="http://javafx.com/javafx/8.0.40"
+            xmlns:fx="http://javafx.com/fxml/1" fx:controller="acmi.l2.clientmod.l2tool.Controller">
+    <GridPane alignment="CENTER" hgap="2.0" vgap="2.0" AnchorPane.bottomAnchor="5.0" AnchorPane.leftAnchor="5.0"
+              AnchorPane.rightAnchor="5.0" AnchorPane.topAnchor="5.0">
+        <columnConstraints>
+            <ColumnConstraints hgrow="NEVER" maxWidth="-Infinity" minWidth="-Infinity"/>
+            <ColumnConstraints maxWidth="1.7976931348623157E308"/>
+            <ColumnConstraints hgrow="NEVER" maxWidth="-Infinity" minWidth="-Infinity"/>
+            <ColumnConstraints hgrow="NEVER" maxWidth="-Infinity" minWidth="-Infinity"/>
+        </columnConstraints>
+        <Label text="img" GridPane.columnIndex="0" GridPane.halignment="CENTER" GridPane.rowIndex="0"/>
+        <TextField fx:id="imgPath" editable="false" GridPane.columnIndex="1" GridPane.columnSpan="2"
+                   GridPane.rowIndex="0"/>
+        <Button maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false"
+                onAction="#selectImage" text=".." GridPane.columnIndex="3" GridPane.rowIndex="0"/>
+        <Label text="utx" GridPane.columnIndex="0" GridPane.halignment="CENTER" GridPane.rowIndex="1"/>
+        <TextField fx:id="utxPath" editable="false" GridPane.columnIndex="1" GridPane.columnSpan="2"
+                   GridPane.rowIndex="1"/>
+        <Button maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false"
+                onAction="#selectPackage" text=".." GridPane.columnIndex="3" GridPane.hgrow="ALWAYS"
+                GridPane.rowIndex="1"/>
+        <Button fx:id="textureInfo" maxWidth="1.7976931348623157E308" mnemonicParsing="false"
+                onAction="#showTextureInfo" text="?" GridPane.columnIndex="0" GridPane.halignment="CENTER"
+                GridPane.hgrow="ALWAYS" GridPane.rowIndex="2"/>
+        <ComboBox id="textures" fx:id="textureList" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1"
+                  GridPane.hgrow="ALWAYS" GridPane.rowIndex="2"/>
+        <Button fx:id="export" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity"
+                mnemonicParsing="false" onAction="#exportTexture" text="export" GridPane.columnIndex="2"
+                GridPane.hgrow="ALWAYS" GridPane.rowIndex="2"/>
+        <Button fx:id="set" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity"
+                mnemonicParsing="false" onAction="#replaceTexture" text="set" GridPane.columnIndex="3"
+                GridPane.rowIndex="2"/>
+        <Button fx:id="toUED" alignment="TOP_LEFT" maxWidth="1.7976931348623157E308" minHeight="-Infinity"
+                minWidth="-Infinity" mnemonicParsing="false" onAction="#convertUTX" text="L2-&gt;UnrealED"
+                GridPane.columnIndex="2" GridPane.columnSpan="2" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS"
+                GridPane.rowIndex="3"/>
+        <Button fx:id="view" mnemonicParsing="false" onAction="#showTexture" text="view" GridPane.columnIndex="1"
+                GridPane.rowIndex="3"/>
+        <rowConstraints>
+            <RowConstraints/>
+            <RowConstraints/>
+            <RowConstraints/>
+            <RowConstraints/>
+        </rowConstraints>
+    </GridPane>
+    <ProgressIndicator id="utxProgress" fx:id="progress" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
+                       AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"/>
+</AnchorPane>
