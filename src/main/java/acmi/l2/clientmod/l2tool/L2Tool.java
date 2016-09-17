@@ -61,7 +61,7 @@ public class L2Tool extends Application {
     }
 
     public static void main(String[] args) {
-        if (args.length > 0 && args[0].equals("-export") || args[0].equals("-convert")) {
+        if (args.length > 0 && (args[0].equals("-export") || args[0].equals("-convert"))) {
             L2ToolCmd.main(args);
         } else {
             launch(args);
