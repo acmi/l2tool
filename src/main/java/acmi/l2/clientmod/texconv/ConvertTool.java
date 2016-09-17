@@ -25,15 +25,17 @@ import acmi.l2.clientmod.io.UnrealPackage;
 import acmi.l2.clientmod.l2tool.util.TextureProperties;
 
 import java.io.*;
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Function;
 
 import static acmi.l2.clientmod.io.BufferUtil.getCompactInt;
 import static acmi.l2.clientmod.io.BufferUtil.getString;
 import static acmi.l2.clientmod.io.ByteUtil.compactIntToByteArray;
+import static acmi.l2.clientmod.io.UnrealPackage.ObjectFlag.*;
 import static java.lang.Integer.reverseBytes;
 import static java.lang.Short.reverseBytes;
 
@@ -52,17 +54,73 @@ public class ConvertTool {
                 }
             });
 
+        List<UnrealPackage.NameEntry> nameTable = new ArrayList<>(up.getNameTable());
+        List<UnrealPackage.ImportEntry> importTable = new ArrayList<>(up.getImportTable());
+        List<UnrealPackage.ExportEntry> exportTable = new ArrayList<>(up.getExportTable());
+
+        int corePackageRef;
+        if ((corePackageRef = up.objectReferenceByName("Core.Package", c -> c.equalsIgnoreCase("Core.Class"))) == 0) {
+            boolean createCorePackage = false;
+            for (UnrealPackage.ExportEntry exportEntry : exportTable) {
+                String objClass = exportEntry.getFullClassName();
+                if (!AS_IS.contains(objClass) &&
+                        !WITH_PROPS.contains(objClass) &&
+                        !TEXTURE.contains(objClass)) {
+                    createCorePackage = true;
+                }
+            }
+
+            if (createCorePackage) {
+                Map<String, Integer> map = new LinkedHashMap<>();
+                map.put("Core", UnrealPackage.ObjectFlag.getFlags(TagExp, LoadForServer, LoadForEdit, Native));
+                map.put("Class", UnrealPackage.ObjectFlag.getFlags(TagExp, HighlightedName, LoadForServer, LoadForEdit, Native));
+                map.put("Package", UnrealPackage.ObjectFlag.getFlags(TagExp, HighlightedName, LoadForServer, LoadForEdit, Native));
+                for (Map.Entry<String, Integer> entry : map.entrySet()) {
+                    UnrealPackage.NameEntry nameEntry = new UnrealPackage.NameEntry(up, nameTable.size(), entry.getKey(), entry.getValue());
+                    if (!nameTable.contains(nameEntry))
+                        nameTable.add(nameEntry);
+                }
+                Function<String, Integer> name = n -> nameTable.stream()
+                        .filter(ne -> ne.getName().equalsIgnoreCase(n))
+                        .findAny()
+                        .map(ne -> ne.getIndex())
+                        .orElseThrow(() -> new IllegalStateException(""));
+
+                UnrealPackage.ImportEntry core = new UnrealPackage.ImportEntry(
+                        up, importTable.size(),
+                        name.apply("Core"), name.apply("Package"), 0, name.apply("Core"));
+                int coreIndex;
+                if ((coreIndex = importTable.indexOf(core)) == -1) {
+                    coreIndex = importTable.size();
+                    importTable.add(core);
+                }
+                importTable.add(new UnrealPackage.ImportEntry(
+                        up, importTable.size(),
+                        name.apply("Core"), name.apply("Class"), -(coreIndex + 1), name.apply("Package")));
+                corePackageRef = -importTable.size();
+            }
+        }
+
         try (RandomAccessFile dest = new RandomAccessFile(savePath, "rw")) {
+            Field objectPackage = UnrealPackage.Entry.class.getDeclaredField("objectPackage");
+            objectPackage.setAccessible(true);
+            Field objectName = UnrealPackage.Entry.class.getDeclaredField("objectName");
+            objectName.setAccessible(true);
+            Field classPackage = UnrealPackage.ImportEntry.class.getDeclaredField("classPackage");
+            classPackage.setAccessible(true);
+            Field className = UnrealPackage.ImportEntry.class.getDeclaredField("className");
+            className.setAccessible(true);
+
             dest.setLength(0);
 
             dest.writeInt(reverseBytes(0x9E2A83C1));
             dest.writeInt(NEW_PACKAGE_VERSION);
             dest.writeInt(Integer.reverseBytes(up.getFlags()));
-            dest.writeInt(Integer.reverseBytes(up.getNameTable().size()));
+            dest.writeInt(Integer.reverseBytes(nameTable.size()));
             dest.writeInt(0);
-            dest.writeInt(Integer.reverseBytes(up.getExportTable().size()));
+            dest.writeInt(Integer.reverseBytes(exportTable.size()));
             dest.writeInt(0);
-            dest.writeInt(Integer.reverseBytes(up.getImportTable().size()));
+            dest.writeInt(Integer.reverseBytes(importTable.size()));
             dest.writeInt(0);
             dest.writeInt(reverseBytes((int) (up.getUUID().getMostSignificantBits() >> 32)));
             dest.writeShort(reverseBytes((short) (up.getUUID().getMostSignificantBits() >> 16)));
@@ -79,8 +137,8 @@ public class ConvertTool {
             dest.seek(16);
             dest.writeInt(reverseBytes(nameOffset));
             dest.seek(nameOffset);
-            for (int i = 0; i < up.getNameTable().size(); i++) {
-                UnrealPackage.NameEntry nameEntry = up.getNameTable().get(i);
+            for (int i = 0; i < nameTable.size(); i++) {
+                UnrealPackage.NameEntry nameEntry = nameTable.get(i);
                 if (!isASCII(nameEntry.getName()))
                     log.println("UTF->ASCII: " + nameEntry.getName());
                 writeString(dest, nameEntry.getName());
@@ -90,11 +148,11 @@ public class ConvertTool {
                     noneInd = i;
             }
 
-            int[] exportSizes = new int[up.getExportTable().size()];
-            int[] exportOffsets = new int[up.getExportTable().size()];
-            for (int i = 0; i < up.getExportTable().size(); i++) {
+            int[] exportSizes = new int[exportTable.size()];
+            int[] exportOffsets = new int[exportTable.size()];
+            for (int i = 0; i < exportTable.size(); i++) {
                 exportOffsets[i] = (int) dest.getFilePointer();
-                UnrealPackage.ExportEntry exportEntry = up.getExportTable().get(i);
+                UnrealPackage.ExportEntry exportEntry = exportTable.get(i);
                 byte[] raw = exportEntry.getObjectRawData();
                 byte[] data = convert(up, raw, exportEntry.getObjectClass().toString(), up.getVersion(), up.getLicense(), noneInd, exportEntry.getOffset(), exportOffsets[i]);
                 exportSizes[i] = data.length;
@@ -105,34 +163,37 @@ public class ConvertTool {
             dest.seek(32);
             dest.writeInt(reverseBytes(importOffset));
             dest.seek(importOffset);
-            for (UnrealPackage.ImportEntry importEntry : up.getImportTable()) {
-                writeCompactInt(dest, up.nameReference(importEntry.getClassPackage().getName()));
-                writeCompactInt(dest, up.nameReference(importEntry.getClassName().getName()));
-                dest.writeInt(Integer.reverseBytes(ref(importEntry.getObjectPackage())));
-                writeCompactInt(dest, up.nameReference(importEntry.getObjectName().getName()));
+            for (UnrealPackage.ImportEntry importEntry : importTable) {
+                writeCompactInt(dest, classPackage.getInt(importEntry));
+                writeCompactInt(dest, className.getInt(importEntry));
+                dest.writeInt(Integer.reverseBytes(objectPackage.getInt(importEntry)));
+                writeCompactInt(dest, objectName.getInt(importEntry));
             }
 
             int exportOffset = (int) dest.getFilePointer();
             dest.seek(24);
             dest.writeInt(reverseBytes(exportOffset));
             dest.seek(exportOffset);
-            for (int i = 0; i < up.getExportTable().size(); i++) {
-                UnrealPackage.ExportEntry exportEntry = up.getExportTable().get(i);
-                String objClass = exportEntry.getObjectClass().toString();
-                if (!AS_IS.contains(objClass) &&
-                        !WITH_PROPS.contains(objClass) &&
-                        !TEXTURE.contains(objClass)) {
-                    objClass = "Core.Package";
+            for (int i = 0; i < exportTable.size(); i++) {
+                UnrealPackage.ExportEntry exportEntry = exportTable.get(i);
+                int objClass = ref(exportEntry.getObjectClass());
+                String objClassName = exportEntry.getFullClassName();
+                if (!AS_IS.contains(objClassName) &&
+                        !WITH_PROPS.contains(objClassName) &&
+                        !TEXTURE.contains(objClassName)) {
+                    objClass = corePackageRef;
                     log.println("REMOVED: " + exportEntry.toString() + "[" + exportEntry.getObjectClass().getObjectFullName() + "]");
                 }
-                writeCompactInt(dest, up.objectReferenceByName(objClass, s -> s.equalsIgnoreCase("Core.Class")));
+                writeCompactInt(dest, objClass);
                 writeCompactInt(dest, ref(exportEntry.getObjectSuperClass()));
                 dest.writeInt(Integer.reverseBytes(ref(exportEntry.getObjectPackage())));
-                writeCompactInt(dest, up.nameReference(exportEntry.getObjectName().getName()));
+                writeCompactInt(dest, exportEntry.getObjectName().getIndex());
                 dest.writeInt(Integer.reverseBytes(exportEntry.getObjectFlags()));
                 writeCompactInt(dest, exportSizes[i]);
                 writeCompactInt(dest, exportOffsets[i]);
             }
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
         }
     }
 
