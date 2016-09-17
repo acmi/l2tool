@@ -22,7 +22,9 @@
 package acmi.l2.clientmod.l2tool;
 
 import acmi.l2.clientmod.io.UnrealPackage;
-import acmi.l2.clientmod.l2tool.util.MipMapInfo;
+import acmi.l2.clientmod.l2tool.img.DDS;
+import acmi.l2.clientmod.l2tool.img.TGA;
+import acmi.l2.clientmod.l2tool.img.MipMapInfo;
 import acmi.l2.clientmod.texconv.ConvertTool;
 
 import java.io.File;
@@ -56,11 +58,11 @@ public class L2ToolCmd {
                 case DXT1:
                 case DXT3:
                 case DXT5:
-                    Img.DDS.createFromData(raw, info).write(createParents(new File(fixPath(entry.getObjectFullName()) + ".dds")));
+                    DDS.createFromData(raw, info).write(createParents(new File(fixPath(entry.getObjectFullName()) + ".dds")));
                     System.out.println(" " + info.format);
                     break;
                 case RGBA8:
-                    Img.TGA.createFromData(raw, info).write(createParents(new File(fixPath(entry.getObjectFullName()) + ".tga")));
+                    TGA.createFromData(raw, info).write(createParents(new File(fixPath(entry.getObjectFullName()) + ".tga")));
                     System.out.println(" " + info.format);
                     break;
                 default:

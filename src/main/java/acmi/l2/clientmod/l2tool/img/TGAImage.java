@@ -36,7 +36,7 @@
  * Sun gratefully acknowledges that this software was originally authored
  * and developed by Kenneth Bradley Russell and Christopher John Kline.
  */
-package acmi.l2.clientmod.l2tool.util;
+package acmi.l2.clientmod.l2tool.img;
 
 import java.io.*;
 import java.nio.ByteBuffer;

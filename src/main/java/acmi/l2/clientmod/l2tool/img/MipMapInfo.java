@@ -19,13 +19,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package acmi.l2.clientmod.l2tool.util;
+package acmi.l2.clientmod.l2tool.img;
 
 import acmi.l2.clientmod.io.UnrealPackage;
-import acmi.l2.clientmod.l2tool.Img;
 import acmi.l2.clientmod.texconv.ConvertTool;
 
-import java.awt.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -38,7 +36,7 @@ public class MipMapInfo {
     public Img.Format format = Img.Format.P8;
     public int width;
     public int height;
-    public Color[] palette;
+    public Palette palette;
     public int[] offsets;
     public int[] sizes;
 
@@ -62,14 +60,8 @@ public class MipMapInfo {
         info.sizes = new int[info.offsets.length];
 
         UnrealPackage.Entry palette = up.objectReference(properties.getPalette());
-        if (palette instanceof UnrealPackage.ExportEntry) {
-            UnrealPackage.ExportEntry paletteEntry = (UnrealPackage.ExportEntry) palette;
-            ByteBuffer paletteBuffer = ByteBuffer.wrap(paletteEntry.getObjectRawData()).order(ByteOrder.LITTLE_ENDIAN);
-            new TextureProperties().read(up, paletteBuffer);
-            info.palette = new Color[getCompactInt(paletteBuffer)];
-            for (int i = 0; i < info.palette.length; i++)
-                info.palette[i] = new Color(paletteBuffer.getInt(), true);
-        }
+        if (palette != null)
+            info.palette = Palette.getRGBA((UnrealPackage.ExportEntry) palette);
 
         for (int i = 0; i < info.offsets.length; i++) {
             texture.position(texture.position() + 4);

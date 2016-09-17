@@ -19,9 +19,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package acmi.l2.clientmod.l2tool.util;
+package acmi.l2.clientmod.l2tool.img;
 
-import acmi.l2.clientmod.l2tool.Img;
 import acmi.l2.clientmod.io.UnrealPackage;
 
 import java.nio.ByteBuffer;

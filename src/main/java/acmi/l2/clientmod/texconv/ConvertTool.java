@@ -22,7 +22,7 @@
 package acmi.l2.clientmod.texconv;
 
 import acmi.l2.clientmod.io.UnrealPackage;
-import acmi.l2.clientmod.l2tool.util.TextureProperties;
+import acmi.l2.clientmod.l2tool.img.TextureProperties;
 
 import java.io.*;
 import java.lang.reflect.Field;

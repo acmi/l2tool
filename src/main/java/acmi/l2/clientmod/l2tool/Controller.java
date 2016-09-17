@@ -21,10 +21,12 @@
  */
 package acmi.l2.clientmod.l2tool;
 
-import acmi.l2.clientmod.io.UnrealPackage;
+import acmi.l2.clientmod.io.*;
+import acmi.l2.clientmod.io.RandomAccessFile;
+import acmi.l2.clientmod.l2tool.img.*;
 import acmi.l2.clientmod.l2tool.textureview.TextureView;
-import acmi.l2.clientmod.l2tool.util.MipMapInfo;
-import acmi.l2.clientmod.l2tool.util.TextureProperties;
+import acmi.l2.clientmod.l2tool.img.MipMapInfo;
+import acmi.l2.clientmod.l2tool.img.TextureProperties;
 import acmi.l2.clientmod.texconv.ConvertTool;
 import acmi.util.AutoCompleteComboBox;
 import javafx.application.Platform;
@@ -64,7 +66,7 @@ import static javafx.collections.FXCollections.sort;
 public class Controller implements Initializable {
     private static final String KEY_UTX_INITIAL_DIRECTORY = "UTX_INITIAL_DIRECTORY";
     private static final String KEY_UED_INITIAL_DIRECTORY = "UED_INITIAL_DIRECTORY";
-    
+
     private L2Tool application;
 
     private String imgInitialDirectory;
@@ -246,13 +248,26 @@ public class Controller implements Initializable {
             Img image;
             switch (file.getName().substring(file.getName().lastIndexOf('.') + 1)) {
                 case "dds":
-                    image = Img.DDS.loadFromFile(file);
+                    image = DDS.loadFromFile(file);
                     break;
                 case "tga":
-                    image = Img.TGA.loadFromFile(file);
+                    image = TGA.loadFromFile(file);
                     break;
                 case "bmp":
-                    image = Img.G16.loadFromFile(file);
+                    try (RandomAccessFile raf = new RandomAccessFile(file, true, null)) {
+                        raf.setPosition(0x1c);
+                        int bpp = raf.readUnsignedShort();
+                        switch (bpp) {
+                            case 8:
+                                image = P8.loadFromFile(file);
+                                break;
+                            case 16:
+                                image = G16.loadFromFile(file);
+                                break;
+                            default:
+                                throw new IOException(String.format("%d bit per pixel not supported", bpp));
+                        }
+                    }
                     break;
                 default:
                     throw new IOException("Unknown file format");
@@ -343,15 +358,15 @@ public class Controller implements Initializable {
             byte[] raw = texture.getObjectRawData();
             switch (textureInfoProperty.get().format) {
                 case RGBA8:
-                    return Img.TGA.createFromData(raw, textureInfoProperty.get()).getMipMaps()[0];
+                    return TGA.createFromData(raw, textureInfoProperty.get()).getMipMaps()[0];
                 case DXT1:
                 case DXT3:
                 case DXT5:
-                    return Img.DDS.createFromData(raw, textureInfoProperty.get()).getMipMaps()[0];
+                    return DDS.createFromData(raw, textureInfoProperty.get()).getMipMaps()[0];
                 case G16:
-                    return Img.G16.createFromData(raw, textureInfoProperty.get()).getMipMaps()[0];
+                    return G16.createFromData(raw, textureInfoProperty.get()).getMipMaps()[0];
                 case P8:
-                    return Img.P8.createFromData(raw, textureInfoProperty.get()).getMipMaps()[0];
+                    return P8.createFromData(raw, textureInfoProperty.get()).getMipMaps()[0];
                 default:
                     throw new Exception("Unsupported format " + textureInfoProperty.get().format);
             }
@@ -419,16 +434,16 @@ public class Controller implements Initializable {
                 case DXT1:
                 case DXT3:
                 case DXT5:
-                    Img.DDS.createFromData(raw, info).write(file);
+                    DDS.createFromData(raw, info).write(file);
                     break;
                 case RGBA8:
-                    Img.TGA.createFromData(raw, info).write(file);
+                    TGA.createFromData(raw, info).write(file);
                     break;
                 case G16:
-                    Img.G16.createFromData(raw, info).write(file);
+                    G16.createFromData(raw, info).write(file);
                     break;
                 case P8:
-                    Img.P8.createFromData(raw, info).write(file);
+                    P8.createFromData(raw, info).write(file);
                     break;
             }
         } catch (Exception e) {
@@ -474,6 +489,12 @@ public class Controller implements Initializable {
                 System.arraycopy(replace, 0, buffer, info.offsets[i], info.sizes[i]);
             }
             texture.setObjectRawData(buffer);
+
+            if (info.format == Img.Format.P8) {
+                P8 p8 = (P8) data;
+                info.palette = p8.palette;
+                info.palette.writeToUnrealPackage(utx);
+            }
             show(Alert.AlertType.INFORMATION, "Success", null, "Texture " + texture.toString() + " successfully replaced.");
         } catch (Exception e) {
             showError(e);
@@ -527,6 +548,8 @@ public class Controller implements Initializable {
     }
 
     private static void showError(Throwable t) {
+        t.printStackTrace();
+
         while (t.getCause() != null)
             t = t.getCause();
 
