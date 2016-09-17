@@ -411,17 +411,20 @@ public class Controller implements Initializable {
                 case DXT1:
                 case DXT3:
                 case DXT5:
-                    fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("DDS", "*.dds"));
+                    fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Direct Draw Surface", "*.dds"));
                     break;
                 case RGBA8:
-                    fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("TGA", "*.tga"));
+                    fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("32-bit Targa", "*.tga"));
                     break;
                 case G16:
+                    fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("16-bit Grayscale BMP", "*.bmp"));
+                    break;
                 case P8:
-                    fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("BMP", "*.bmp"));
+                    fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("8-bit Palettized BMP", "*.bmp"));
+                    break;
             }
             fileChooser.setInitialDirectory(new File(exportInitialDirectory));
-            fileChooser.setInitialFileName(textureInfoProperty.get().name + "." + fileChooser.getExtensionFilters().get(0).getDescription().toLowerCase());
+            fileChooser.setInitialFileName(textureInfoProperty.get().name + "." + fileChooser.getExtensionFilters().get(0).getExtensions().get(0).substring(2));
 
             final File file = fileChooser.showSaveDialog(application.getStage());
             if (file == null)
