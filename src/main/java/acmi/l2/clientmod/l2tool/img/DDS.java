@@ -87,7 +87,7 @@ public class DDS extends Img {
         return Squish.decompressImage(null, width, height, compressed, compressionType);
     }
 
-    private static Format getFormat(int format) throws IOException {
+    public static Format getFormat(int format) throws IOException {
         switch (format) {
             case 0x31545844:
                 return Format.DXT1;

@@ -163,39 +163,68 @@ public class Controller implements Initializable {
 
                                     new TextureProperties().read(up, data);
 
-                                    if ("tga".equals(up.getNameTable().get(getCompactInt(data)).getName())) {
-                                        final MipMapInfo info = new MipMapInfo();
-                                        info.exportIndex = ee.getIndex();
-                                        info.name = ee.getObjectFullName();
+                                    String ext = up.nameReference(getCompactInt(data)).toLowerCase();
+                                    switch (ext) {
+                                        case "tga": {
+                                            final MipMapInfo info = new MipMapInfo();
+                                            info.exportIndex = ee.getIndex();
+                                            info.name = ee.getObjectFullName();
 
-                                        int dataLength = getCompactInt(data);
+                                            int dataLength = getCompactInt(data);
 
-                                        // initial header fields
-                                        int idLength = data.get() & 0xff;
-                                        int colorMapType = data.get() & 0xff;
-                                        int imageType = data.get() & 0xff;
+                                            // initial header fields
+                                            int idLength = data.get() & 0xff;
+                                            int colorMapType = data.get() & 0xff;
+                                            int imageType = data.get() & 0xff;
 
-                                        // color map header fields
-                                        int firstEntryIndex = data.getShort() & 0xffff;
-                                        int colorMapLength = data.getShort() & 0xffff;
-                                        byte colorMapEntrySize = data.get();
+                                            // color map header fields
+                                            int firstEntryIndex = data.getShort() & 0xffff;
+                                            int colorMapLength = data.getShort() & 0xffff;
+                                            byte colorMapEntrySize = data.get();
 
-                                        // TGA image specification fields
-                                        int xOrigin = data.getShort() & 0xffff;
-                                        int yOrigin = data.getShort() & 0xffff;
-                                        int width = data.getShort() & 0xffff;
-                                        int height = data.getShort() & 0xffff;
-                                        byte pixelDepth = data.get();
-                                        byte imageDescriptor = data.get();
+                                            // TGA image specification fields
+                                            int xOrigin = data.getShort() & 0xffff;
+                                            int yOrigin = data.getShort() & 0xffff;
+                                            int width = data.getShort() & 0xffff;
+                                            int height = data.getShort() & 0xffff;
+                                            byte pixelDepth = data.get();
+                                            byte imageDescriptor = data.get();
 
-                                        info.format = Img.Format.RGBA8;
-                                        info.width = width;
-                                        info.height = height;
-                                        info.offsets = new int[]{data.position()};
-                                        info.sizes = new int[]{raw.length - data.position()};
+                                            info.format = Img.Format.RGBA8;
+                                            info.width = width;
+                                            info.height = height;
+                                            info.offsets = new int[]{data.position()};
+                                            info.sizes = new int[]{raw.length - data.position()};
 
-                                        if (info.offsets.length > 0)
+                                            if (info.offsets.length > 0)
+                                                Platform.runLater(() -> textureList.getItems().add(info));
+                                            break;
+                                        }
+                                        case "dds": {
+                                            final MipMapInfo info = new MipMapInfo();
+                                            info.exportIndex = ee.getIndex();
+                                            info.name = ee.getObjectFullName();
+
+                                            byte[] dds = new byte[getCompactInt(data)];
+                                            int dataOffset = data.position();
+                                            data.get(dds);
+                                            ByteBuffer buffer = ByteBuffer.wrap(dds);
+                                            DDSImage image = DDSImage.read(buffer);
+                                            info.format = DDS.getFormat(image.getCompressionFormat());
+                                            info.width = image.getWidth();
+                                            info.height = image.getHeight();
+                                            DDSImage.ImageInfo[] infos = image.getAllMipMaps();
+                                            info.offsets = new int[infos.length];
+                                            info.sizes = new int[infos.length];
+                                            info.offsets[0] = 128 + dataOffset;
+                                            info.sizes[0] = infos[0].getData().limit();
+                                            for (int i = 1; i < infos.length; i++) {
+                                                info.offsets[i] = info.offsets[i - 1] + info.sizes[i - 1];
+                                                info.sizes[i] = infos[i].getData().limit();
+                                            }
                                             Platform.runLater(() -> textureList.getItems().add(info));
+                                            break;
+                                        }
                                     }
 
                                     break;
