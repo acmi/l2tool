@@ -54,25 +54,27 @@ public class L2Tool extends Application {
         stage.setTitle("L2Tool");
         stage.getIcons().add(new Image(L2Tool.class.getResourceAsStream("L2Tool.png")));
         stage.setScene(new Scene(parent));
-        stage.setWidth(Double.parseDouble(windowPrefs().get("width", String.valueOf(stage.getWidth()))));
-        stage.setHeight(Double.parseDouble(windowPrefs().get("height", String.valueOf(stage.getHeight()))));
-        if (windowPrefs().getBoolean("maximized", stage.isMaximized())) {
-            stage.setMaximized(true);
-        } else {
-            Rectangle2D bounds = new Rectangle2D(
-                    Double.parseDouble(windowPrefs().get("x", String.valueOf(stage.getX()))),
-                    Double.parseDouble(windowPrefs().get("y", String.valueOf(stage.getY()))),
-                    stage.getWidth(),
-                    stage.getHeight());
-            if (Screen.getScreens()
-                    .stream()
-                    .map(Screen::getVisualBounds)
-                    .anyMatch(r -> r.intersects(bounds))) {
-                stage.setX(bounds.getMinX());
-                stage.setY(bounds.getMinY());
-            }
-        }
         stage.show();
+        Platform.runLater(() -> {
+            stage.setWidth(Double.parseDouble(windowPrefs().get("width", String.valueOf(stage.getWidth()))));
+            stage.setHeight(Double.parseDouble(windowPrefs().get("height", String.valueOf(stage.getHeight()))));
+            if (windowPrefs().getBoolean("maximized", stage.isMaximized())) {
+                stage.setMaximized(true);
+            } else {
+                Rectangle2D bounds = new Rectangle2D(
+                        Double.parseDouble(windowPrefs().get("x", String.valueOf(stage.getX()))),
+                        Double.parseDouble(windowPrefs().get("y", String.valueOf(stage.getY()))),
+                        stage.getWidth(),
+                        stage.getHeight());
+                if (Screen.getScreens()
+                        .stream()
+                        .map(Screen::getVisualBounds)
+                        .anyMatch(r -> r.intersects(bounds))) {
+                    stage.setX(bounds.getMinX());
+                    stage.setY(bounds.getMinY());
+                }
+            }
+        });
 
         stage.setOnCloseRequest(windowEvent -> Platform.exit());
 
