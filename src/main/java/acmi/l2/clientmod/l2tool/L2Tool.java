@@ -23,10 +23,13 @@ package acmi.l2.clientmod.l2tool;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.beans.InvalidationListener;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 
 import java.util.prefs.Preferences;
@@ -51,13 +54,53 @@ public class L2Tool extends Application {
         stage.setTitle("L2Tool");
         stage.getIcons().add(new Image(L2Tool.class.getResourceAsStream("L2Tool.png")));
         stage.setScene(new Scene(parent));
+        stage.setWidth(Double.parseDouble(windowPrefs().get("width", String.valueOf(stage.getWidth()))));
+        stage.setHeight(Double.parseDouble(windowPrefs().get("height", String.valueOf(stage.getHeight()))));
+        if (windowPrefs().getBoolean("maximized", stage.isMaximized())) {
+            stage.setMaximized(true);
+        } else {
+            Rectangle2D bounds = new Rectangle2D(
+                    Double.parseDouble(windowPrefs().get("x", String.valueOf(stage.getX()))),
+                    Double.parseDouble(windowPrefs().get("y", String.valueOf(stage.getY()))),
+                    stage.getWidth(),
+                    stage.getHeight());
+            if (Screen.getScreens()
+                    .stream()
+                    .map(Screen::getVisualBounds)
+                    .anyMatch(r -> r.intersects(bounds))) {
+                stage.setX(bounds.getMinX());
+                stage.setY(bounds.getMinY());
+            }
+        }
         stage.show();
 
         stage.setOnCloseRequest(windowEvent -> Platform.exit());
+
+        Platform.runLater(() -> {
+            InvalidationListener listener = observable -> {
+                if (stage.isMaximized()) {
+                    windowPrefs().putBoolean("maximized", true);
+                } else {
+                    windowPrefs().putBoolean("maximized", false);
+                    windowPrefs().put("x", String.valueOf(Math.round(stage.getX())));
+                    windowPrefs().put("y", String.valueOf(Math.round(stage.getY())));
+                    windowPrefs().put("width", String.valueOf(Math.round(stage.getWidth())));
+                    windowPrefs().put("height", String.valueOf(Math.round(stage.getHeight())));
+                }
+            };
+            stage.xProperty().addListener(listener);
+            stage.yProperty().addListener(listener);
+            stage.widthProperty().addListener(listener);
+            stage.heightProperty().addListener(listener);
+        });
     }
 
     public static Preferences getPrefs() {
-        return Preferences.userRoot().node("l2tool");
+        return Preferences.userRoot().node("l2clientmod").node("l2tool");
+    }
+
+    private static Preferences windowPrefs() {
+        return getPrefs().node("window");
     }
 
     public static void main(String[] args) {
