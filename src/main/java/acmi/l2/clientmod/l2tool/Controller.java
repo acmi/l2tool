@@ -64,12 +64,14 @@ import static acmi.l2.clientmod.io.BufferUtil.getCompactInt;
 import static javafx.collections.FXCollections.sort;
 
 public class Controller implements Initializable {
-    private static final String KEY_UTX_INITIAL_DIRECTORY = "UTX_INITIAL_DIRECTORY";
-    private static final String KEY_UED_INITIAL_DIRECTORY = "UED_INITIAL_DIRECTORY";
+    private static final String KEY_UTX_INITIAL_DIRECTORY = "utx_initial_directory";
+    private static final String KEY_UED_INITIAL_DIRECTORY = "ued_initial_directory";
+    private static final String KEY_IMAGE_INITIAL_DIRECTORY = "image_initial_directory";
+    private static final String KEY_EXPORT_INITIAL_DIRECTORY = "export_initial_directory";
 
     private L2Tool application;
 
-    private String imgInitialDirectory;
+    private final StringProperty imgInitialDirectory = new SimpleStringProperty(L2Tool.getPrefs().get(KEY_IMAGE_INITIAL_DIRECTORY, null));
     @FXML
     private TextField imgPath;
     private final ObjectProperty<Img> imgProperty = new SimpleObjectProperty<>();
@@ -90,7 +92,7 @@ public class Controller implements Initializable {
     private final ObjectProperty<MipMapInfo> textureInfoProperty = new SimpleObjectProperty<>();
     @FXML
     private Button export;
-    private String exportInitialDirectory;
+    private final StringProperty exportInitialDirectory = new SimpleStringProperty(L2Tool.getPrefs().get(KEY_EXPORT_INITIAL_DIRECTORY, null));
     private final StringProperty uedInitialDirectory = new SimpleStringProperty(L2Tool.getPrefs().get(KEY_UED_INITIAL_DIRECTORY, null));
     @FXML
     private Button view;
@@ -222,7 +224,9 @@ public class Controller implements Initializable {
 
         textureInfoProperty.bind(Bindings.createObjectBinding(() -> AutoCompleteComboBox.getSelectedItem(textureList), textureList.getSelectionModel().selectedIndexProperty()));
 
+        imgInitialDirectory.addListener((observable, oldValue, newValue) -> L2Tool.getPrefs().put(KEY_IMAGE_INITIAL_DIRECTORY, newValue));
         utxInitialDirectory.addListener((observable, oldValue, newValue) -> L2Tool.getPrefs().put(KEY_UTX_INITIAL_DIRECTORY, newValue));
+        exportInitialDirectory.addListener((observable, oldValue, newValue) -> L2Tool.getPrefs().put(KEY_EXPORT_INITIAL_DIRECTORY, newValue));
         uedInitialDirectory.addListener((observable, oldValue, newValue) -> L2Tool.getPrefs().put(KEY_UED_INITIAL_DIRECTORY, newValue));
     }
 
@@ -235,14 +239,17 @@ public class Controller implements Initializable {
                 new FileChooser.ExtensionFilter("TGA", "*.tga"),
                 new FileChooser.ExtensionFilter("BMP", "*.bmp")
         );
-        if (imgInitialDirectory != null)
-            fileChooser.setInitialDirectory(new File(imgInitialDirectory));
+        if (imgInitialDirectory.get() != null) {
+            File dir = new File(imgInitialDirectory.get());
+            if (dir.exists() && dir.isDirectory())
+                fileChooser.setInitialDirectory(dir);
+        }
 
         File file = fileChooser.showOpenDialog(application.getStage());
         if (file == null)
             return;
 
-        imgInitialDirectory = file.getParent();
+        imgInitialDirectory.set(file.getParent());
 
         try {
             Img image;
@@ -286,8 +293,11 @@ public class Controller implements Initializable {
         fileChooser.getExtensionFilters().addAll(
                 new FileChooser.ExtensionFilter("Unreal package", "*.utx", "*.ugx"),
                 new FileChooser.ExtensionFilter("All files", "*.*"));
-        if (utxInitialDirectory.get() != null)
-            fileChooser.setInitialDirectory(new File(utxInitialDirectory.get()));
+        if (utxInitialDirectory.get() != null) {
+            File file = new File(utxInitialDirectory.get());
+            if (file.exists() && file.isDirectory())
+                fileChooser.setInitialDirectory(file);
+        }
 
         File file = fileChooser.showOpenDialog(application.getStage());
         if (file == null)
@@ -405,8 +415,8 @@ public class Controller implements Initializable {
 
             FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Save " + info.format);
-            if (exportInitialDirectory == null)
-                exportInitialDirectory = utxInitialDirectory.get();
+            if (exportInitialDirectory.getValue() == null)
+                exportInitialDirectory.setValue(utxInitialDirectory.get());
             switch (info.format) {
                 case DXT1:
                 case DXT3:
@@ -423,13 +433,15 @@ public class Controller implements Initializable {
                     fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("8-bit Palettized BMP", "*.bmp"));
                     break;
             }
-            fileChooser.setInitialDirectory(new File(exportInitialDirectory));
+            File dir = new File(exportInitialDirectory.get());
+            if (dir.exists() && dir.isDirectory())
+                fileChooser.setInitialDirectory(dir);
             fileChooser.setInitialFileName(textureInfoProperty.get().name + "." + fileChooser.getExtensionFilters().get(0).getExtensions().get(0).substring(2));
 
             final File file = fileChooser.showSaveDialog(application.getStage());
             if (file == null)
                 return;
-            exportInitialDirectory = file.getParent();
+            exportInitialDirectory.setValue(file.getParent());
 
             UnrealPackage.ExportEntry texture = utx.getExportTable().get(info.exportIndex);
             byte[] raw = texture.getObjectRawData();
@@ -511,11 +523,10 @@ public class Controller implements Initializable {
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("utx", "*.utx"));
         if (uedInitialDirectory.get() == null)
             uedInitialDirectory.set(utxInitialDirectory.get());
-        fileChooser.setInitialDirectory(new File(uedInitialDirectory.get()));
-        try {
-            fileChooser.setInitialFileName(new File(utxPathProperty.get()).getName());
-        } catch (NoSuchMethodError ignore) {
-        }
+        File dir = new File(uedInitialDirectory.get());
+        if (dir.exists() && dir.isDirectory())
+            fileChooser.setInitialDirectory(dir);
+        fileChooser.setInitialFileName(new File(utxPathProperty.get()).getName());
 
         final File file = fileChooser.showSaveDialog(application.getStage());
         if (file == null)
