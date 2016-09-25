@@ -336,7 +336,7 @@ public class Controller implements Initializable {
 
         try (UnrealPackage utxFile = new UnrealPackage(file, true)) {
             utxPathProperty.setValue(file.getAbsolutePath());
-        } catch (UncheckedIOException e) {
+        } catch (Exception e) {
             showError(e);
         }
     }
