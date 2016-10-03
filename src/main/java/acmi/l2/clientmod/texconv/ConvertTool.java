@@ -122,10 +122,10 @@ public class ConvertTool {
             dest.writeInt(0);
             dest.writeInt(Integer.reverseBytes(importTable.size()));
             dest.writeInt(0);
-            dest.writeInt(reverseBytes((int) (up.getUUID().getMostSignificantBits() >> 32)));
-            dest.writeShort(reverseBytes((short) (up.getUUID().getMostSignificantBits() >> 16)));
-            dest.writeShort(reverseBytes((short) up.getUUID().getMostSignificantBits()));
-            dest.writeLong(up.getUUID().getLeastSignificantBits());
+            dest.writeInt(reverseBytes((int) (up.getGUID().getMostSignificantBits() >> 32)));
+            dest.writeShort(reverseBytes((short) (up.getGUID().getMostSignificantBits() >> 16)));
+            dest.writeShort(reverseBytes((short) up.getGUID().getMostSignificantBits()));
+            dest.writeLong(up.getGUID().getLeastSignificantBits());
             dest.writeInt(Integer.reverseBytes(up.getGenerations().size()));
             for (UnrealPackage.Generation generation : up.getGenerations()) {
                 dest.writeInt(Integer.reverseBytes(generation.getExportCount()));
